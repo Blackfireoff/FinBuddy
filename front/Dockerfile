@@ -8,4 +8,4 @@ RUN npm install
 RUN npm run build
 VOLUME /app
 EXPOSE 5173
-CMD [ "npx","serve", "dist" ]
+CMD [ "npx","serve","-l", "5173", "dist"]
