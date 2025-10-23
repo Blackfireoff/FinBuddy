@@ -1,0 +1,14 @@
+services:
+  backend:
+    build:
+      context: .
+    networks:
+      http:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=PathPrefix(`/finbuddy/api`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=58080"
+      - "traefik.http.routers.backend.entrypoints=http"
+networks:
+  http:
+    external: true

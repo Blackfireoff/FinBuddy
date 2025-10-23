@@ -12,33 +12,32 @@ export default function WalletHealth({ address }) {
     if (!address) return;
 
     const fetchWalletData = async () => {
-      try {
-        const reswallet = await fetch(`https://eth.blockscout.com/api/v2/addresses/${address}`);
-        const restrans = await fetch(`https://eth.blockscout.com/api/v2/addresses/${address}/transactions`);
-        if (!reswallet.ok) throw new Error("Failed to fetch wallet data");
-          const resultwallet = await res.json();
-          setData(result);
-      if (!res.ok) throw new Error("Failed to fetch transactions");
-      const result = await res.json();
-      console.log("Transactions:", result);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+      
+        fetch(`https://eth.blockscout.com/api/v2/addresses/${address}`).then(async (reswallet) => {
+          try {
+            if (!reswallet.ok) throw new Error("Failed to fetch wallet data");
+              let res  = await reswallet.json();
+              setData(res);
+            } catch (err) {
+              setError(err.message);
+            } finally {
+              setLoading(false);
+            }
+          });
+         fetch(`https://eth.blockscout.com/api/v2/addresses/${address}/transactions`).then(async (restransactions) => {
+          try {
+            if (!restransactions.ok) throw new Error("Failed to fetch transactions");
+              let res = await restransactions.json();
+              setTransactions(res.items || []);
+            } catch (err) {
+              setError(err.message);
+            } finally {
+              setLoading(false);
+            }
+          });
     };
-
     fetchWalletData();
   }, [address]);
-
-  const fetchTransactions = async () => {
-    try {
-
-      setTransactions(result.items || []);
-    } catch (err) {
-      console.error(err);
-    }
-  }
 
   if (loading) return <div className="text-gray-500">Loading wallet data...</div>;
   if (error) return <div className="text-red-600">Error: {error}</div>;
@@ -58,10 +57,46 @@ export default function WalletHealth({ address }) {
           <span className="text-gray-500">ETH Balance:</span>
           <span>{Number(data?.coin_balance || 0).toFixed(4)} {data.coin_balance?.symbol || "ETH"}</span>
         </div>
+        <div>
+          <h3 className="text-gray-500 mb-2">Recent Transactions:</h3>
+          {transactions.length > 0 ? (
+            <div className="max-h-64 overflow-y-auto border rounded-lg p-2 space-y-2 bg-gray-50 dark:bg-gray-800">
+              {transactions.slice(0, 10).map((tx) => (
+                <div key={tx.hash} className="p-2 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-medium truncate max-w-[150px]">
+                      Hash:{" "}
+                      <a
+                        href={`https://eth.blockscout.com/tx/${tx.hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        {tx.hash.slice(0, 10)}...
+                      </a>
+                    </span>
+                    <span className="text-gray-500">{new Date(tx.timestamp).toLocaleString()}</span>
+                  </div>
 
-        <div className="flex justify-between">
-          <span className="text-gray-500">Transactions:</span>
-          <span>{data.transaction_count}</span>
+                  <div className="flex justify-between text-xs mt-1">
+                    <span>From:</span>
+                    <span className="truncate max-w-[120px]">{tx.from?.hash?.slice(0, 10)}...</span>
+                  </div>
+
+                  <div className="flex justify-between text-xs">
+                    <span>To:</span>
+                    <span className="truncate max-w-[120px]">{tx.to?.hash?.slice(0, 10) || "Contract Creation"}</span>
+                  </div>
+
+                  <div className="text-right text-xs mt-1">
+                    <span className="text-green-600">{Number(tx.value) / 1e18} ETH</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-400 text-sm">No transactions found.</p>
+          )}
         </div>
 
         <div className="flex justify-between">
