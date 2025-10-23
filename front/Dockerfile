@@ -1,9 +1,7 @@
 FROM node:lts-alpine
 
 WORKDIR /app
-
-COPY ./package*.json ./
-COPY ./finbuddy-frontend .
+COPY . .
 RUN npm install
 RUN npm run build
 VOLUME /app
