@@ -8,6 +8,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=PathPrefix(`/finbuddy`)"
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+      - "traefik.http.routers.frontend.entrypoints=http"
 networks:
   http:
     external: true
