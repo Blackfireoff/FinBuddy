@@ -50,6 +50,9 @@ class TransactionScorer:
         final_score = round(
             economic * 0.3 + technical * 0.2 + risk * 0.3 + strategic * 0.2, 2
         )
+        final_score_no_risk = round(
+            economic * 0.4 + technical * 0.3 + strategic * 0.3, 2
+        )
         return {
             "tx_hash": tx.get("hash"),
             "scores": {
@@ -59,4 +62,5 @@ class TransactionScorer:
                 "strategic": strategic,
             },
             "final_score": final_score,
+            "final_score_no_risk": final_score_no_risk,
         }

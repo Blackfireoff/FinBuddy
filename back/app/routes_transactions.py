@@ -31,3 +31,26 @@ async def get_transaction_scores(network: Literal["mainnet", "sepolia"], evm_add
     print(scored_transactions)
     return {"network": network, "address": evm_address, "scored_transactions": scored_transactions}#         "final": final_score,
 #         }
+
+# add a route using the ai.py to get a chat completion from asi1.ai
+@router.get("/ai/chat")
+def ai_chat(message: str):
+    import requests, os, json
+    from dotenv import load_dotenv
+
+    url = "https://api.asi1.ai/v1/chat/completions"
+    load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+    headers = {
+        "Authorization": f"Bearer {os.getenv('ASI_ONE_API_KEY')}",
+        "Content-Type": "application/json"
+    }
+    body = {
+        "model": "asi1-mini",
+        "messages": [{"role": "user", "content": message}]
+    }
+    response = requests.post(url, headers=headers, json=body)
+    if response.status_code == 200:
+        content = response.json()["choices"][0]["message"]["content"]
+        return {"response": content}
+    else:
+        return {"error": "Failed to get response from AI service", "status_code": response.status_code}

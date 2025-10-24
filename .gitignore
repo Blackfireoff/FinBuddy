@@ -149,3 +149,5 @@ back/.env
 back/.venv/
 back/.vscode/
 back/venv/*
+
+*.env*
