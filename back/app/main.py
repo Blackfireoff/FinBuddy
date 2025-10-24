@@ -1,6 +1,6 @@
 ﻿from fastapi import FastAPI
 
-from routes_transactions import router as transactions_router
+from routes import router as transactions_router
 
 # 1. Créer une instance de FastAPI
 app = FastAPI()
