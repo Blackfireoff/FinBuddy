@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 from scoring import EnhancedTransactionScorer
 from transactions import get_last_transactions, BlockscoutAPIClient
+from positions import WalletPositions
 
 router = APIRouter()
 
@@ -71,3 +72,33 @@ def ai_chat(message: str):
         return {"response": content}
     else:
         return {"error": "Failed to get response from AI service", "status_code": response.status_code}
+
+
+@router.get("/positions/{network}/{evm_address}")
+async def get_positions(network: Literal["mainnet", "sepolia"], evm_address: str):
+    """
+    Endpoint pour récupérer TOUTES les positions actuelles d'un wallet avec valeurs USD: 
+    - ETH natif (avec prix USD)
+    - Tous les tokens ERC-20 (USDC, USDT, etc.) avec prix USD
+    - Tous les NFTs (ERC-721, ERC-1155)
+    - Montants détenus, PnL et valeurs USD
+    
+    Exemple: GET /positions/mainnet/0x94E2623A8637F85aC367940D5594eD4498fEDB51
+    
+    Retourne:
+    - native_balance: Balance ETH avec usd_price et usd_value
+    - all_tokens.erc20_tokens: Liste des tokens ERC-20 avec PnL et valeurs USD
+    - all_tokens.nft_tokens: Liste des NFTs détenus
+    - portfolio_summary: Résumé du portefeuille avec total_value_usd
+    """
+    # Initialize wallet positions client
+    wallet_positions = WalletPositions(network)
+    
+    # Get wallet positions
+    positions = await wallet_positions.get_wallet_positions(evm_address)
+    
+    return {
+        "network": network,
+        "address": evm_address,
+        "positions": positions
+    }
