@@ -5,7 +5,7 @@ from jinja2 import Template
 from schemas import ExplainRequest, ExplainResponse, TxExplanation
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-MODEL = os.getenv("MODEL", "llama3.3")
+MODEL = os.getenv("MODEL", "llama3.2:3b")
 MAX_TOKENS = int(os.getenv("MAX_TOKENS", "600"))
 TEMPERATURE = float(os.getenv("TEMPERATURE", "0.2"))
 TOP_P = float(os.getenv("TOP_P", "0.9"))
@@ -34,7 +34,7 @@ async def ollama_chat(system_prompt: str, user_prompt: str) -> str:
         "stream": False
     }
     async with httpx.AsyncClient(timeout=120.0) as client:
-        r = await client.post(url, json=payload)
+        r = await client.post('http://10.15.0.20:11434', json=payload)
         if r.status_code != 200:
             raise HTTPException(status_code=500, detail=f"Ollama error: {r.text}")
         data = r.json()

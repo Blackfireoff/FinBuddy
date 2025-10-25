@@ -74,5 +74,5 @@ def ai_chat(message: str):
         return {"error": "Failed to get response from AI service", "status_code": response.status_code}
     
 @router.post("/aiservice/explain", response_model=ExplainResponse)
-def ai_explain(req: ExplainRequest):
-    return explain(req=req)
+async def ai_explain(req: ExplainRequest):
+    return await explain(req=req)
