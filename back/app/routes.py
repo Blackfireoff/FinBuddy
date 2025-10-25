@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 from fastapi import APIRouter
 from scoring import EnhancedTransactionScorer
 from transactions import get_last_transactions, BlockscoutAPIClient
-from AIService.schemas import ExplainResponse, ExplainRequest
-from AIService.main import explain
+from schemas import ExplainResponse, ExplainRequest
+from AIService import explain
 
 router = APIRouter()
 
