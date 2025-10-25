@@ -12,7 +12,11 @@ function formatWeiToEth(weiStr, maxFrac = 6) {
     const wei = BigInt(String(weiStr));
     const whole = wei / WEI_PER_ETH;
     const frac = wei % WEI_PER_ETH;
-    let fracStr = frac.toString().padStart(18, "0").slice(0, maxFrac).replace(/0+$/, "");
+    let fracStr = frac
+      .toString()
+      .padStart(18, "0")
+      .slice(0, maxFrac)
+      .replace(/0+$/, "");
     return fracStr ? `${whole}.${fracStr}` : whole.toString();
   } catch {
     const n = Number(weiStr) / 1e18;
@@ -59,7 +63,10 @@ export default function WalletHealth({ address, chainId }) {
   const [debug, setDebug] = useState(null);
 
   const network = useMemo(() => networkFromChainId(chainId), [chainId]);
-  const explorerBase = useMemo(() => blockscoutBaseByNetwork(network), [network]);
+  const explorerBase = useMemo(
+    () => blockscoutBaseByNetwork(network),
+    [network],
+  );
   const chainIdNorm = useMemo(() => normalizeChainId(chainId), [chainId]);
 
   useEffect(() => {
@@ -72,11 +79,15 @@ export default function WalletHealth({ address, chainId }) {
 
       const url = `${API_BASE}/transactions/${network}/${address}/scores`;
       try {
-        const res = await fetch(url, { headers: { "Content-Type": "application/json" } });
+        const res = await fetch(url, {
+          headers: { "Content-Type": "application/json" },
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
-        const items = Array.isArray(data?.scored_transactions) ? data.scored_transactions : [];
+        const items = Array.isArray(data?.scored_transactions)
+          ? data.scored_transactions
+          : [];
 
         // Solde: on prend l'address_info qui correspond le mieux à l'adresse demandée
         // (fallback: première transaction qui a un coin_balance)
@@ -118,7 +129,10 @@ export default function WalletHealth({ address, chainId }) {
         Address: <span className="font-mono">{address}</span>
       </div>
       <div className="mt-1 text-sm opacity-80">
-        Network: <span className="font-mono">{network} ({chainIdNorm || "—"})</span>
+        Network:{" "}
+        <span className="font-mono">
+          {network} ({chainIdNorm || "—"})
+        </span>
       </div>
 
       {loading && <div className="mt-4">Chargement…</div>}
@@ -131,10 +145,14 @@ export default function WalletHealth({ address, chainId }) {
           </div>
 
           <div className="mt-6">
-            <div className="font-medium mb-2">Recent Transactions (scored):</div>
+            <div className="font-medium mb-2">
+              Recent Transactions (scored):
+            </div>
             <div className="space-y-3 max-h-80 overflow-auto rounded-md border border-white/10 p-3">
               {scored.length === 0 && (
-                <div className="opacity-70">No transactions found on this network.</div>
+                <div className="opacity-70">
+                  No transactions found on this network.
+                </div>
               )}
 
               {scored.map((s) => {
@@ -146,7 +164,10 @@ export default function WalletHealth({ address, chainId }) {
                 const feeEth = formatWeiToEth(det?.fee?.value ?? 0, 6);
 
                 return (
-                  <div key={s.tx_hash} className="text-sm rounded-md p-3 bg-white/5">
+                  <div
+                    key={s.tx_hash}
+                    className="text-sm rounded-md p-3 bg-white/5"
+                  >
                     <div className="flex items-center gap-2">
                       <a
                         className="underline"
@@ -163,11 +184,21 @@ export default function WalletHealth({ address, chainId }) {
                         Risk: {s.risk_level || "—"}
                       </span>
                     </div>
-                    <div className="mt-1">From: <span className="font-mono">{from}</span></div>
-                    <div>To: <span className="font-mono">{to}</span></div>
-                    <div>Date: <span className="font-mono">{ts}</span></div>
-                    <div>Value: <strong>{valueEth} ETH</strong></div>
-                    <div>Fee: <span className="font-mono">{feeEth} ETH</span></div>
+                    <div className="mt-1">
+                      From: <span className="font-mono">{from}</span>
+                    </div>
+                    <div>
+                      To: <span className="font-mono">{to}</span>
+                    </div>
+                    <div>
+                      Date: <span className="font-mono">{ts}</span>
+                    </div>
+                    <div>
+                      Value: <strong>{valueEth} ETH</strong>
+                    </div>
+                    <div>
+                      Fee: <span className="font-mono">{feeEth} ETH</span>
+                    </div>
                   </div>
                 );
               })}
@@ -178,7 +209,7 @@ export default function WalletHealth({ address, chainId }) {
           <details className="mt-4 opacity-70">
             <summary>Debug</summary>
             <pre className="whitespace-pre-wrap text-xs mt-2">
-{JSON.stringify(debug, null, 2)}
+              {JSON.stringify(debug, null, 2)}
             </pre>
           </details>
         </>
