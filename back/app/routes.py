@@ -1,8 +1,11 @@
 ﻿from typing import Literal
-
+import requests, os, json
+from dotenv import load_dotenv
 from fastapi import APIRouter
 from scoring import EnhancedTransactionScorer
 from transactions import get_last_transactions, BlockscoutAPIClient
+from AIService.schemas import ExplainResponse, ExplainRequest
+from AIService.main import explain
 
 router = APIRouter()
 
@@ -52,8 +55,6 @@ async def get_transaction_scores(network: Literal["mainnet", "sepolia"], evm_add
 # add a route using the ai.py to get a chat completion from asi1.ai
 @router.get("/ai/chat")
 def ai_chat(message: str):
-    import requests, os, json
-    from dotenv import load_dotenv
 
     url = "https://api.asi1.ai/v1/chat/completions"
     load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -71,3 +72,7 @@ def ai_chat(message: str):
         return {"response": content}
     else:
         return {"error": "Failed to get response from AI service", "status_code": response.status_code}
+    
+@router.post("/aiservice/explain", response_model=ExplainResponse)
+def ai_explain(req: ExplainRequest):
+    return explain(req=req)

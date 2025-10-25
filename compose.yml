@@ -2,23 +2,28 @@ services:
   backend:
     build:
       context: ./back
+    ports:
+      - 8090:8080
+      
     networks:
       http:
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`${HOSTNAME}`) && PathPrefix(`/api`)"
-      - "traefik.http.services.backend.loadbalancer.server.port=8080"
-      - "traefik.http.routers.backend.entrypoints=http"
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.backend.rule=Host(`${HOSTNAME}`) && PathPrefix(`/api`)"
+    #   - "traefik.http.services.backend.loadbalancer.server.port=8080"
+    #   - "traefik.http.routers.backend.entrypoints=http"
   frontend:
     build:
       context: ./front
+    ports:
+      - 8000:5173
     networks:
       http:
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`${HOSTNAME}`) && PathPrefix(`/`)"
-      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
-      - "traefik.http.routers.frontend.entrypoints=http"
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.frontend.rule=Host(`${HOSTNAME}`) && PathPrefix(`/`)"
+    #   - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+    #   - "traefik.http.routers.frontend.entrypoints=http"
 
 networks:
   http:
