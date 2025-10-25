@@ -31,30 +31,22 @@ async def get_transaction_scores(network: Literal["mainnet", "sepolia"], evm_add
     api_client = BlockscoutAPIClient(network)
     enhanced_scorer = EnhancedTransactionScorer(wallet=evm_address)
     
-    # Score transactions with enhanced data and interpreter API
+    # Score transactions avec données enrichies + interpreter (V2)
+    cohort_stats = await api_client.get_cohort_stats()
+
     scored_transactions = []
     for tx in transactions:
-        # Get comprehensive API data including interpreter analysis
-        api_data = await api_client.get_comprehensive_transaction_data(tx)
-        
-        # Score with enhanced data and interpreter API
-        enhanced_score = enhanced_scorer.score_transaction_enhanced(tx, api_data)
-        scored_transactions.append(enhanced_score)
-    
+        enhanced_data = await api_client.get_comprehensive_transaction_data(tx)
+        scored_tx = enhanced_scorer.score_transaction_enhanced_v2(
+            tx, enhanced_data, cohort_stats=cohort_stats
+        )
+        scored_transactions.append(scored_tx)
+
     return {
         "network": network, 
         "address": evm_address, 
         "scored_transactions": scored_transactions,
-        "scoring_method": "enhanced_blockscout_with_interpreter",
-        "features": [
-            "real_time_blockchain_data",
-            "blockscout_interpreter_api",
-            "comprehensive_address_analysis", 
-            "token_transfer_analysis",
-            "transaction_classification",
-            "advanced_risk_assessment",
-            "confidence_scoring"
-        ]
+
     }
 
 # add a route using the ai.py to get a chat completion from asi1.ai

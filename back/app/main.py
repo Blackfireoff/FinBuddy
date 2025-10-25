@@ -1,7 +1,6 @@
 ﻿from fastapi import FastAPI
 
 from routes import router as transactions_router
-from positions import router as positions_router
 
 # 1. Créer une instance de FastAPI
 app = FastAPI()
@@ -10,7 +9,6 @@ app = FastAPI()
 app.include_router(transactions_router)
 
 # Inclure les routes de positions
-app.include_router(positions_router)
 
 
 # 2. Définir un "endpoint" (une route)

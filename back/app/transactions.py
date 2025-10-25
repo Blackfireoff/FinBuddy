@@ -88,7 +88,7 @@ class BlockscoutAPIClient:
     Comprehensive Blockscout API client for transaction analysis.
     Handles all API interactions for enhanced transaction scoring.
     """
-    
+
     def __init__(self, network: Literal["mainnet", "sepolia"]):
         self.network = network
         self.base_urls = {
@@ -96,11 +96,10 @@ class BlockscoutAPIClient:
             "sepolia": "https://eth-sepolia.blockscout.com"
         }
         self.base_url = self.base_urls[network]
-    
+
     async def get_comprehensive_address_info(self, address: str) -> Dict:
-        """
-        Get comprehensive address information from Blockscout API.
-        """
+        """Get comprehensive information for an address."""
+        import httpx
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 url = f"{self.base_url}/api/v2/addresses/{address}"
@@ -110,27 +109,27 @@ class BlockscoutAPIClient:
         except Exception as e:
             print(f"Error getting address info: {e}")
         return {}
-    
+
     async def get_token_transfers(self, address: str, limit: int = 10) -> List[Dict]:
-        """
-        Get token transfer information for an address.
-        """
+        """Get token transfer information for an address."""
+        import httpx
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                url = f"{self.base_url}/api/v2/addresses/{address}/token-transfers"
-                params = {"limit": limit}
-                response = await client.get(url, params=params)
+                url = f"{self.base_url}/api/v2/addresses/{address}/token-transfers?limit={limit}"
+                response = await client.get(url)
                 if response.status_code == 200:
                     data = response.json()
-                    return data.get("items", [])
+                    if isinstance(data, dict) and "items" in data:
+                        return data.get("items", [])
+                    if isinstance(data, list):
+                        return data
         except Exception as e:
             print(f"Error getting token transfers: {e}")
         return []
-    
+
     async def get_transaction_details(self, tx_hash: str) -> Dict:
-        """
-        Get detailed transaction information.
-        """
+        """Get detailed transaction information including method, gas, etc."""
+        import httpx
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 url = f"{self.base_url}/api/v2/transactions/{tx_hash}"
@@ -140,15 +139,12 @@ class BlockscoutAPIClient:
         except Exception as e:
             print(f"Error getting transaction details: {e}")
         return {}
-    
+
     async def get_interpreter_analysis(self, tx_hash: str) -> Dict:
-        """
-        Get transaction analysis from Blockscout interpreter API.
-        This provides human-readable transaction descriptions and risk assessment.
-        """
+        """Get interpreter analysis for a transaction (classification, risk, etc.)."""
+        import httpx
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                # Use the interpreter API endpoint
                 url = f"{self.base_url}/api/v2/transactions/{tx_hash}/interpret"
                 response = await client.get(url)
                 if response.status_code == 200:
@@ -156,40 +152,38 @@ class BlockscoutAPIClient:
         except Exception as e:
             print(f"Error getting interpreter analysis: {e}")
         return {}
-    
+
     async def get_transaction_logs(self, tx_hash: str) -> List[Dict]:
-        """
-        Get transaction logs for detailed analysis.
-        """
+        """Get logs/events for a transaction."""
+        import httpx
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 url = f"{self.base_url}/api/v2/transactions/{tx_hash}/logs"
                 response = await client.get(url)
                 if response.status_code == 200:
                     data = response.json()
-                    return data.get("items", [])
+                    if isinstance(data, dict) and "items" in data:
+                        return data.get("items", [])
+                    if isinstance(data, list):
+                        return data
         except Exception as e:
             print(f"Error getting transaction logs: {e}")
         return []
-    
+
     async def get_comprehensive_transaction_data(self, tx: Dict) -> Dict:
-        """
-        Get all comprehensive data for a transaction in parallel.
-        This method fetches all necessary data for enhanced scoring.
-        """
+        """Get all comprehensive data for a transaction in parallel."""
+        import asyncio
         to_address = tx.get("to", "")
         tx_hash = tx.get("hash", "")
-        
-        # Prepare all API calls
+
         tasks = []
-        
         if to_address:
             tasks.append(self.get_comprehensive_address_info(to_address))
             tasks.append(self.get_token_transfers(to_address, 10))
         else:
             tasks.append(asyncio.create_task(asyncio.sleep(0)))
             tasks.append(asyncio.create_task(asyncio.sleep(0)))
-        
+
         if tx_hash:
             tasks.append(self.get_transaction_details(tx_hash))
             tasks.append(self.get_interpreter_analysis(tx_hash))
@@ -198,21 +192,110 @@ class BlockscoutAPIClient:
             tasks.append(asyncio.create_task(asyncio.sleep(0)))
             tasks.append(asyncio.create_task(asyncio.sleep(0)))
             tasks.append(asyncio.create_task(asyncio.sleep(0)))
-        
-        # Execute all tasks in parallel
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Extract results safely
-        address_info = results[0] if not isinstance(results[0], Exception) else {}
-        token_transfers = results[1] if not isinstance(results[1], Exception) else []
-        tx_details = results[2] if not isinstance(results[2], Exception) else {}
-        interpreter_data = results[3] if not isinstance(results[3], Exception) else {}
-        tx_logs = results[4] if not isinstance(results[4], Exception) else []
-        
+
+        results = await asyncio.gather(*tasks, return_exceptions=True) if tasks else []
+
+        address_info    = results[0] if len(results) > 0 and not isinstance(results[0], Exception) else {}
+        token_transfers = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else []
+        tx_details      = results[2] if len(results) > 2 and not isinstance(results[2], Exception) else {}
+        interpreter     = results[3] if len(results) > 3 and not isinstance(results[3], Exception) else {}
+        tx_logs         = results[4] if len(results) > 4 and not isinstance(results[4], Exception) else []
+
         return {
             "address_info": address_info,
             "token_transfers": token_transfers,
             "transaction_details": tx_details,
-            "interpreter_data": interpreter_data,
+            "interpreter_data": interpreter,
             "transaction_logs": tx_logs
+        }
+
+    async def get_recent_blocks(self, limit: int = 20):
+        """Fetch recent blocks (for cohort stats)."""
+        import httpx
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                url = f"{self.base_url}/api/v2/blocks?type=block&limit={limit}"
+                r = await client.get(url)
+                if r.status_code == 200:
+                    data = r.json()
+                    if isinstance(data, dict) and "items" in data:
+                        return data["items"]
+                    if isinstance(data, list):
+                        return data
+        except Exception as e:
+            print(f"Error get_recent_blocks: {e}")
+        return []
+
+    async def get_block_transactions(self, block_number: int, limit: int = 200):
+        """Fetch transactions for a specific block."""
+        import httpx
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                url = f"{self.base_url}/api/v2/blocks/{block_number}/transactions?limit={limit}"
+                r = await client.get(url)
+                if r.status_code == 200:
+                    data = r.json()
+                    if isinstance(data, dict) and "items" in data:
+                        return data["items"]
+                    if isinstance(data, list):
+                        return data
+        except Exception as e:
+            print(f"Error get_block_transactions: {e}")
+        return []
+
+    async def get_cohort_stats(self, blocks: int = 12, tx_cap: int = 600) -> dict:
+        """Build gas/tip percentiles across recent blocks."""
+        import asyncio, math
+        recent_blocks = await self.get_recent_blocks(limit=blocks)
+        block_numbers, base_fees = [], []
+        for b in recent_blocks:
+            n = b.get("number") or b.get("height") or (b.get("block") or {}).get("number")
+            try:
+                n = int(n)
+            except Exception:
+                n = None
+            if n is not None:
+                block_numbers.append(n)
+            bf = b.get("base_fee_per_gas")
+            try:
+                if bf is not None:
+                    base_fees.append(int(bf))
+            except Exception:
+                pass
+
+        txs = []
+        tasks = [self.get_block_transactions(n, limit=200) for n in block_numbers[:blocks]]
+        results = await asyncio.gather(*tasks, return_exceptions=True) if tasks else []
+        for res in results:
+            if isinstance(res, list):
+                txs.extend(res)
+            if len(txs) >= tx_cap:
+                break
+        txs = txs[:tx_cap]
+
+        eGP_list, tip_list = [], []
+        for t in txs:
+            try:
+                gp = t.get("gas_price") or t.get("max_fee_per_gas")
+                if gp is not None:
+                    eGP_list.append(int(gp))
+                mp = t.get("max_priority_fee_per_gas")
+                if mp is not None:
+                    tip_list.append(int(mp))
+            except Exception:
+                continue
+
+        def pctls(vals):
+            if not vals: return {}
+            vals2 = sorted(vals)
+            def p(v):
+                k = (len(vals2)-1) * v/100.0
+                f = math.floor(k); c = math.ceil(k)
+                if f == c: return float(vals2[int(k)])
+                return float(vals2[f] + (vals2[c]-vals2[f])*(k-f))
+            return {50: p(50), 80: p(80), 95: p(95)}
+
+        return {
+            "pctl": {"eGP": pctls(eGP_list), "tip": pctls(tip_list)},
+            "base_fee_last": (base_fees[0] if base_fees else None)
         }
