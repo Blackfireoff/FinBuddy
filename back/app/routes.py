@@ -1,10 +1,12 @@
 ﻿from typing import Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from scoring import EnhancedTransactionScorer
 from transactions import get_last_transactions, BlockscoutAPIClient
 from positions import WalletPositions
 from schemas import ExplainRequest, ExplainResponse
+from AIService import explain
+import json
 router = APIRouter()
 
 
@@ -103,7 +105,34 @@ async def get_positions(network: Literal["mainnet", "sepolia"], evm_address: str
         "address": evm_address,
         "positions": positions
     }
+@router.websocket("/aiservice/analyse")
+async def ai_explain_ws(websocket: WebSocket):
+    """
+    WebSocket endpoint for AI analysis.
+    - Client sends an ExplainRequest (JSON)
+    - Server processes it with the AI service
+    - Server sends back ExplainResponse when done
+    """
+    await websocket.accept()
+    try:
+        # Wait for client to send request
+        data = await websocket.receive_text()
 
-@router.post("/aiservice/analyse", response_model=ExplainResponse)
-async def ai_explain(req: ExplainRequest):
-    return await explain(req=req)
+        # Parse into schema
+        req_dict = json.loads(data)
+        req = ExplainRequest(**req_dict)
+        # Run AI job
+        result: ExplainResponse = await explain(req=req)
+
+        # Send result when done
+        await websocket.send_text(result.model_dump_json(indent=2))
+
+        # Optionally close connection after sending
+        await websocket.close()
+
+    except WebSocketDisconnect:
+        print("🔌 Client disconnected from /aiservice/analyse")
+    except Exception as e:
+        error_msg = json.dumps({"error": str(e)})
+        await websocket.send_text(error_msg)
+        await websocket.close()

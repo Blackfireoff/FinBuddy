@@ -3,7 +3,7 @@
 import { useState } from "react";
 import WalletHealth from "./components/WalletHealth";
 import ConnectWallet from "./components/ConnectWallet.jsx";
-import AiAnalysisBox from "./components/AiAnalysisBox.jsx"; // Import the new component
+import AiAnalysisBox from "./components/AiAnalysisBox.jsx";
 
 export default function Home() {
   const [address, setAddress] = useState("");
@@ -15,33 +15,58 @@ export default function Home() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
 
-  // API call handler for AI analysis
+  // 🔥 New: WebSocket-based AI Analysis
   const handleAnalyzeTransactions = async () => {
-    if (scoredTransactions.length === 0) return;
+    if (!address || scoredTransactions.length === 0) return;
 
     setAiLoading(true);
     setAiError("");
     setAiExplanation("");
 
-    // Use the same API_BASE as WalletHealth
     const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
 
     try {
-      const res = await fetch(`${API_BASE}/aiservice/analyse`, { // Assuming this is your new AI endpoint
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions: scoredTransactions })
-      });
+      // Convert http:// to ws:// for WebSocket connection
+      const wsUrl = API_BASE.replace("http", "ws") + "/aiservice/analyse";
+      const ws = new WebSocket(wsUrl);
 
-      if (!res.ok) throw new Error(`API Error: ${res.status}`);
+      ws.onopen = () => {
+        // When connected, send the ExplainRequest payload
+        const payload = scoredTransactions
+        ws.send(JSON.stringify(payload));
+      };
 
-      const data = await res.json();
-      // Assuming the API returns an object like { explanation: "..." }
-      setAiExplanation(data.explanation || "No explanation provided.");
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
 
+          if (data.error) {
+            setAiError(data.error);
+            ws.close();
+          } else if (data.explanations) {
+            setAiExplanation(data.explanations);
+            ws.close();
+          } else if (data.status) {
+            // Optional: show progress updates if backend streams them
+            setAiExplanation((prev) => prev + `\n${data.status}`);
+          }
+        } catch (err) {
+          console.error("Invalid message from AI WebSocket:", err);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error("WebSocket error:", err);
+        setAiError("WebSocket connection failed.");
+        setAiLoading(false);
+      };
+
+      ws.onclose = () => {
+        setAiLoading(false);
+      };
     } catch (e) {
-      //setAiError(e || "Failed to fetch analysis.");
-    } finally {
+      console.error("AI analysis failed:", e);
+      setAiError("Failed to start AI analysis.");
       setAiLoading(false);
     }
   };
@@ -56,15 +81,12 @@ export default function Home() {
       />
 
       {address && (
-        // New layout wrapper for side-by-side components
         <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-6">
-          
           {/* Left Panel */}
           <div className="flex-1">
             <WalletHealth
               address={address}
               chainId={chainId}
-              // Pass new props to WalletHealth
               onTransactionsLoaded={setScoredTransactions}
               onAnalyzeClick={handleAnalyzeTransactions}
               isAnalysisLoading={aiLoading}
@@ -79,7 +101,6 @@ export default function Home() {
               error={aiError}
             />
           </div>
-
         </div>
       )}
     </main>
