@@ -1,23 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import WalletHealth from "./components/WalletHealth";
 import ConnectWallet from "./components/ConnectWallet.jsx";
 import AiAnalysisBox from "./components/AiAnalysisBox.jsx";
+import SettingsModal from "./components/SettingsModal.jsx";
 
 export default function Home() {
   const [address, setAddress] = useState("");
   const [chainId, setChainId] = useState("");
 
   // State lifted up for AI analysis
-  const [scoredTransactions, setScoredTransactions] = useState([]);
+  const [scoredTransactions, setScoredTransactions] = useState<any>({});
   const [aiExplanation, setAiExplanation] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
 
-  // 🔥 New: WebSocket-based AI Analysis
+  // Settings modal state
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [aiConfig, setAiConfig] = useState<any>(null);
+
+  // Load settings from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("aiConfig");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") setAiConfig(parsed);
+      } else {
+        setAiConfig({ provider: "ollama" });
+      }
+    } catch {
+      setAiConfig({ provider: "ollama" });
+    }
+  }, []);
+
+  const handleSaveSettings = (cfg: any) => {
+    setAiConfig(cfg);
+    try {
+      localStorage.setItem("aiConfig", JSON.stringify(cfg));
+    } catch {}
+  };
+
+  // WebSocket-based AI Analysis including AI settings
   const handleAnalyzeTransactions = async () => {
-    if (!address || scoredTransactions.length === 0) return;
+    if (!address) return;
+    const hasTx = !!scoredTransactions?.scored_transactions && Array.isArray(scoredTransactions.scored_transactions) && scoredTransactions.scored_transactions.length > 0;
+    if (!hasTx) return;
+
+    // Validate AI config
+    const provider = (aiConfig?.provider || "ollama").toLowerCase();
+    const apiKey = aiConfig?.api_key || "";
+    if (provider !== "ollama" && !apiKey) {
+      setAiError("Veuillez configurer une clé API pour le fournisseur choisi.");
+      setSettingsOpen(true);
+      return;
+    }
 
     setAiLoading(true);
     setAiError("");
@@ -26,20 +64,18 @@ export default function Home() {
     const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
 
     try {
-      // Convert http:// to ws:// for WebSocket connection
       const wsUrl = API_BASE.replace("http", "ws") + "/aiservice/analyse";
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
-        // When connected, send the ExplainRequest payload
-        const payload = scoredTransactions
+        const ai = provider === "ollama" ? { provider: "ollama" } : { provider, api_key: apiKey };
+        const payload = { ...scoredTransactions, ai };
         ws.send(JSON.stringify(payload));
       };
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-
           if (data.error) {
             setAiError(data.error);
             ws.close();
@@ -47,8 +83,7 @@ export default function Home() {
             setAiExplanation(data.explanations);
             ws.close();
           } else if (data.status) {
-            // Optional: show progress updates if backend streams them
-            setAiExplanation((prev) => prev + `\n${data.status}`);
+            setAiExplanation((prev) => (prev ? String(prev) + "\n" : "") + data.status);
           }
         } catch (err) {
           console.error("Invalid message from AI WebSocket:", err);
@@ -90,6 +125,7 @@ export default function Home() {
               onTransactionsLoaded={setScoredTransactions}
               onAnalyzeClick={handleAnalyzeTransactions}
               isAnalysisLoading={aiLoading}
+              onOpenSettings={() => setSettingsOpen(true)}
             />
           </div>
 
@@ -103,6 +139,13 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onSave={handleSaveSettings}
+        initialConfig={aiConfig || { provider: "ollama" }}
+      />
     </main>
   );
 }

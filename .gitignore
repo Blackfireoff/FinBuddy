@@ -153,3 +153,5 @@ back/venv/*
 *__pycache__*
 
 *.env*
+
+*front2*
