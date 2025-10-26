@@ -5,6 +5,7 @@ import WalletHealth from "./components/WalletHealth";
 import ConnectWallet from "./components/ConnectWallet.jsx";
 import AiAnalysisBox from "./components/AiAnalysisBox.jsx";
 import SettingsModal from "./components/SettingsModal.jsx";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export default function Home() {
   const [address, setAddress] = useState("");

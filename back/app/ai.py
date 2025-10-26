@@ -1,6 +1,6 @@
 import json
 from typing import Dict, Tuple
-
+import os
 from fastapi import HTTPException
 from jinja2 import Template
 from json_repair import repair_json
@@ -54,7 +54,7 @@ async def openai_compat_chat(user_prompt: str, ai: Dict) -> Tuple[str, str]:
         },
         # Ollama via OpenAI-compatible API
         "ollama": {
-            "base_url": "http://localhost:11434/v1",
+            "base_url": os.getenv("OLLAMA_BASE_URL", default="http://localhost:11434"),
             "models": ["llama3.2:3b"],
         },
     }
