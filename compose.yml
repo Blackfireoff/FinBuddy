@@ -1,21 +1,36 @@
 services:  
-  traefik:
-    image: traefik:v3.3.4
-    pull_policy: always
-    container_name: traefik
+  backend:
+    build:
+      context: ./back
     ports:
-      - "80:80"
-      - "8080:8080"
-      - "443:443"
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedByDefault=false"
-      - "--entrypoints.web.address=:80"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./config/:/etc/traefik/:ro
-      - $VOLUME_TRAEFIK/letsencrypt:/letsencrypt:rw
+      - 8001:8080
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - CORS_ORIGIN=${CORS_ORIGIN}
     networks:
       http:
-      backdb:
-    restart: unless-stopped
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.backend.rule=Host(`${HOSTNAME}`) && PathPrefix(`/api`)"
+    #   - "traefik.http.services.backend.loadbalancer.server.port=8080"
+    #   - "traefik.http.routers.backend.entrypoints=http"
+  frontend:
+    build:
+      context: ./front
+    environment:
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
+    ports:
+      - 8000:3000
+    networks:
+      http:
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.frontend.rule=Host(`${HOSTNAME}`) && PathPrefix(`/`)"
+    #   - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+    #   - "traefik.http.routers.frontend.entrypoints=http"
+
+networks:
+  http:
+   external: true
+  backdb:
+    external: true

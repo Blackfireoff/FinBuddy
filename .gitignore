@@ -149,3 +149,9 @@ back/.env
 back/.venv/
 back/.vscode/
 back/venv/*
+
+*__pycache__*
+
+*.env*
+
+*front2*
