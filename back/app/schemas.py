@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Literal
 from pydantic import BaseModel
 
 class Subscores(BaseModel):
@@ -22,6 +22,8 @@ class ExplainRequest(BaseModel):
     network: str
     address: str
     scored_transactions: List[ScoredTx]
+    # Frontend-provided AI configuration
+    ai: Optional[Dict] = None  # expected keys: provider, api_key, base_url, model
 
 class PerDimExplanation(BaseModel):
     why: str
