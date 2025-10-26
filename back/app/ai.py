@@ -1,7 +1,7 @@
 import json
-from typing import Any, Dict, Tuple
+from typing import Dict, Tuple
 
-from fastapi import FastAPI, HTTPException
+from fastapi import HTTPException
 from jinja2 import Template
 from json_repair import repair_json
 
@@ -105,6 +105,7 @@ async def openai_compat_chat(user_prompt: str, ai: Dict) -> Tuple[str, str]:
 
 async def explain(req: ExplainRequest):
     explanations = []
+    used_model = "unknown"
 
     # On explique TX par TX pour garder des réponses courtes et robustes
     for tx in req.scored_transactions:
@@ -126,7 +127,7 @@ async def explain(req: ExplainRequest):
         data = repair_json(data)
         data = json.loads(data)
         data["tx_hash"] = tx.tx_hash
-        data["scores"] = tx.subscores
+        data["scores"] = tx.subscores.model_dump()  # ensure dict for Pydantic
         explanations.append(data)
 
     # Model label from enforced provider defaults
@@ -137,4 +138,3 @@ async def explain(req: ExplainRequest):
         model=response_model,
         explanations=[TxExplanation(**e) for e in explanations],
     )
-
