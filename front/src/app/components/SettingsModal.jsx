@@ -54,9 +54,10 @@ export default function SettingsModal({ isOpen, onClose, onSave, initialConfig }
               <option value="gemini">Gemini (2.5-flash)</option>
               <option value="groq">Groq (LLaMA 3.3 70B)</option>
               <option value="deepseek">DeepSeek (chat)</option>
+              <option value="asi1">ASI1 (mini)</option>
             </select>
             <p className="mt-1 text-xs text-white/50">
-              Sélectionnez le fournisseur de modèle IA. LLaMA via Ollama ne nécessite pas de clé API.
+              Sélectionnez le fournisseur du modèle IA. Ollama (local) n'exige pas de clé API.
             </p>
           </div>
 
@@ -100,4 +101,3 @@ export default function SettingsModal({ isOpen, onClose, onSave, initialConfig }
     </div>
   );
 }
-

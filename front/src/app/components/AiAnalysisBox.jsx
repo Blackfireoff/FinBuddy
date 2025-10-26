@@ -1,5 +1,4 @@
 "use client";
-import { useMemo } from "react";
 import { CheckCircle, AlertTriangle, TrendingUp, Shield, Cpu } from "lucide-react";
 
 // Simple loading spinner
@@ -10,39 +9,29 @@ function Spinner() {
 }
 
 export default function AiAnalysisBox({ isLoading, error, explanation }) {
- const parsedExplanations = Array.isArray(explanation) ? explanation : [];
+  const parsedExplanations = Array.isArray(explanation) ? explanation : [];
 
-  // Dimension icons + colors
-  const dimensionConfig = {
-    economic: {
-      label: "Economic",
-      icon: TrendingUp,
-      color: "text-emerald-400",
-    },
-    technical: {
-      label: "Technical",
-      icon: Cpu,
-      color: "text-blue-400",
-    },
-    risk_security: {
-      label: "Risk / Security",
-      icon: Shield,
-      color: "text-red-400",
-    },
-    strategic: {
-      label: "Strategic",
-      icon: AlertTriangle,
-      color: "text-yellow-400",
-    },
-  };
+  const badge = (label, score, cls) => (
+    <span className={`px-3 py-1 rounded-md text-sm ${cls}`}>
+      {label}:{" "}
+      {Number.isFinite(Math.round(Number(score) || 0))
+        ? `${Math.round(Number(score) || 0)}%`
+        : "—"}
+    </span>
+  );
 
   return (
-    <section className="w-full h-full rounded-2xl p-6 bg-[#0e1a26] text-white shadow-xl border border-white/10">
-      <h2 className="text-lg font-semibold flex items-center gap-2">
-        🤖 AI Analysis
-      </h2>
+    <section className="w-full h-full rounded-2xl p-0 text-white">
+      <div className="flex items-center justify-between mb-3">
+        <h2
+          className="text-lg font-semibold tracking-tight"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          AI Analysis
+        </h2>
+      </div>
 
-      <div className="mt-4 p-4 min-h-[200px] rounded-md border border-white/10 bg-white/5">
+      <div className="rounded-2xl border border-subtle bg-surface-1 p-4 min-h-[240px]">
         {isLoading && (
           <div className="flex flex-col items-center gap-2 opacity-80 h-full justify-center">
             <Spinner />
@@ -51,54 +40,104 @@ export default function AiAnalysisBox({ isLoading, error, explanation }) {
         )}
 
         {error && (
-          <div className="text-red-400 p-2 rounded bg-red-900/20">
+          <div className="text-red-400 p-2 rounded bg-red-900/20 border border-red-500/20">
             <strong>Error:</strong> {error}
           </div>
         )}
 
         {!isLoading && !error && parsedExplanations.length > 0 && (
           <div className="space-y-6">
-            {parsedExplanations.map((tx, idx) => (
-              <div
-                key={idx}
-                className="rounded-xl border border-white/10 bg-[#172a3a] p-4 transition hover:bg-[#1d3245]"
-              >
-                <div className="flex items-center justify-between">
-                  <h3 className="text-base font-semibold text-white/90">
-                    🧾 Transaction {idx + 1}
-                  </h3>
-                  <span className="text-xs text-white/40 font-mono">
-                    {tx.tx_hash?.slice(0, 10)}...
-                  </span>
-                </div>
+            {parsedExplanations.map((tx, idx) => {
+              const scores =
+                tx && typeof tx.scores === "object" ? tx.scores : {};
+              return (
+                <div
+                  key={idx}
+                  className="rounded-xl bg-surface-2 border border-subtle p-4 card-hover"
+                >
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <h3 className="text-base font-semibold text-white/90">
+                        🧾 Transaction {idx + 1}
+                      </h3>
+                      <div className="text-xs text-muted font-mono">
+                        {tx.tx_hash?.slice(0, 12)}…
+                      </div>
+                    </div>
+                    {/* Header badges */}
+                    <div className="flex flex-wrap gap-2">
+                      {badge(
+                        "Economic",
+                        scores.economic,
+                        "bg-emerald-500/10 text-emerald-400"
+                      )}
+                      {badge(
+                        "Technical",
+                        scores.technical,
+                        "bg-blue-500/10 text-blue-400"
+                      )}
+                      {badge(
+                        "Risk/Security",
+                        scores.risk_security,
+                        "bg-red-500/10 text-red-400"
+                      )}
+                      {badge(
+                        "Strategic",
+                        scores.strategic,
+                        "bg-yellow-500/10 text-yellow-400"
+                      )}
+                    </div>
+                  </div>
 
-                {/* Overall comment */}
-                {tx.overall_comment && (
-                  <p className="mt-2 text-sm text-white/70 italic">
-                    “{tx.overall_comment}”
-                  </p>
-                )}
+                  {tx.overall_comment && (
+                    <p className="mt-3 text-sm text-white/80 italic">
+                      “{tx.overall_comment}”
+                    </p>
+                  )}
 
-                {/* Per-dimension grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  {Object.entries(tx.per_dimension || {}).map(
-                    ([key, val]) => {
-                      const conf = dimensionConfig[key] || {};
-                      const Icon = conf.icon || CheckCircle;
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    {Object.entries(tx.per_dimension || {}).map(([key, val]) => {
+                      const labelMap = {
+                        economic: {
+                          label: "Economic",
+                          cls: "text-emerald-400",
+                          Icon: TrendingUp,
+                        },
+                        technical: {
+                          label: "Technical",
+                          cls: "text-blue-400",
+                          Icon: Cpu,
+                        },
+                        risk_security: {
+                          label: "Risk / Security",
+                          cls: "text-red-400",
+                          Icon: Shield,
+                        },
+                        strategic: {
+                          label: "Strategic",
+                          cls: "text-yellow-400",
+                          Icon: AlertTriangle,
+                        },
+                      };
+                      const conf = labelMap[key] || {
+                        label: key,
+                        cls: "",
+                        Icon: CheckCircle,
+                      };
+                      const { Icon } = conf;
                       return (
                         <div
                           key={key}
-                          className="p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                          className="p-4 rounded-xl bg-surface-3 border border-subtle"
                         >
                           <div className="flex items-center gap-2 mb-2">
-                            <Icon className={`w-4 h-4 ${conf.color}`} />
-                            <h4 className={`text-sm font-semibold ${conf.color}`}>
+                            <Icon className={`w-4 h-4 ${conf.cls}`} />
+                            <h4 className={`text-sm font-semibold ${conf.cls}`}>
                               {conf.label}
                             </h4>
                           </div>
                           <p className="text-xs text-white/80 mb-1">
-                            <span className="font-semibold">Why:</span>{" "}
-                            {val.why || "—"}
+                            <span className="font-semibold">Why:</span> {val.why || "—"}
                           </p>
                           <p className="text-xs text-white/60">
                             <span className="font-semibold">How to improve:</span>{" "}
@@ -106,18 +145,17 @@ export default function AiAnalysisBox({ isLoading, error, explanation }) {
                           </p>
                         </div>
                       );
-                    }
-                  )}
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         {!isLoading && !error && parsedExplanations.length === 0 && (
           <div className="opacity-70 text-center">
-            Click <strong>"Analyze Transactions"</strong> in the wallet panel to
-            see AI-powered insights here.
+            Click <strong>Analyze with AI</strong> to see insights.
           </div>
         )}
       </div>

@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base colors */
+  --background: #0b1220; /* deep navy */
+  --foreground: #e6eef9;
+
+  /* Surfaces */
+  --surface-1: #0e1624;
+  --surface-2: #111b2c;
+  --surface-3: #0f1a29;
+
+  /* Accents */
+  --accent: #2563eb; /* blue-600 */
+  --accent-2: #7c3aed; /* violet-600 */
+  --muted: #9fb3c8;
+  --border: rgba(255,255,255,0.08);
+
+  /* Score category colors */
+  --score-economic: #22c55e; /* green-500 */
+  --score-technical: #60a5fa; /* blue-400 */
+  --score-risk: #ef4444;      /* red-500 */
+  --score-strategic: #f59e0b; /* amber-500 */
+
+  /* Shadows */
+  --shadow-soft: 0 10px 30px rgba(0,0,0,0.25);
+  --shadow-ring: 0 0 0 1px rgba(255,255,255,0.06) inset;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #171717;
+    --surface-1: #f7fbff;
+    --surface-2: #f0f6ff;
+    --surface-3: #eaf2ff;
+    --border: rgba(0,0,0,0.08);
+    --muted: #4b5563;
   }
 }
 
 body {
-  background: var(--background);
+  background: radial-gradient(1000px 600px at 80% -10%, rgba(37,99,235,0.15), transparent),
+              radial-gradient(800px 500px at 10% -20%, rgba(124,58,237,0.12), transparent),
+              var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
+
+/* Card + hover */
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+}
+.card-hover:hover {
+  transform: translateY(-1px);
+  transition: all 200ms ease;
+}
+
+/* Pill */
+.pill {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+/* Category colors */
+.text-economic { color: var(--score-economic); }
+.text-technical { color: var(--score-technical); }
+.text-risk { color: var(--score-risk); }
+.text-strategic { color: var(--score-strategic); }
+
+.bg-surface-1 { background: var(--surface-1); }
+.bg-surface-2 { background: var(--surface-2); }
+.bg-surface-3 { background: var(--surface-3); }
+.border-subtle { border-color: var(--border); }
+.text-muted { color: var(--muted); }

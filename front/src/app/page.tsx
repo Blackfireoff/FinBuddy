@@ -13,7 +13,7 @@ export default function Home() {
 
   // State lifted up for AI analysis
   const [scoredTransactions, setScoredTransactions] = useState<any>({});
-  const [aiExplanation, setAiExplanation] = useState("");
+  const [aiExplanation, setAiExplanation] = useState<any[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
 
@@ -34,6 +34,13 @@ export default function Home() {
     } catch {
       setAiConfig({ provider: "ollama" });
     }
+  }, []);
+
+  // Listen to global FAB event
+  useEffect(() => {
+    const open = () => setSettingsOpen(true);
+    window.addEventListener("open-ai-settings", open as any);
+    return () => window.removeEventListener("open-ai-settings", open as any);
   }, []);
 
   const handleSaveSettings = (cfg: any) => {
@@ -60,7 +67,7 @@ export default function Home() {
 
     setAiLoading(true);
     setAiError("");
-    setAiExplanation("");
+    setAiExplanation([]);
 
     const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
 
@@ -84,7 +91,7 @@ export default function Home() {
             setAiExplanation(data.explanations);
             ws.close();
           } else if (data.status) {
-            setAiExplanation((prev) => (prev ? String(prev) + "\n" : "") + data.status);
+            // optional status messages
           }
         } catch (err) {
           console.error("Invalid message from AI WebSocket:", err);

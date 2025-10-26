@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CircularProgress } from "@heroui/react";
 
 /** ================= Utils ================= */
-// ... (all your existing util functions: formatWeiToEth, normalizeChainId, etc. - no changes needed here)
 const WEI_PER_ETH = 10n ** 18n;
 
 // Affichage ETH propre (wei -> ETH)
@@ -15,10 +13,10 @@ function formatWeiToEth(weiStr, maxFrac = 6) {
     const whole = wei / WEI_PER_ETH;
     const frac = wei % WEI_PER_ETH;
     let fracStr = frac
-    .toString()
-    .padStart(18, "0")
-    .slice(0, maxFrac)
-    .replace(/0+$/, "");
+      .toString()
+      .padStart(18, "0")
+      .slice(0, maxFrac)
+      .replace(/0+$/, "");
     return fracStr ? `${whole}.${fracStr}` : whole.toString();
   } catch {
     const n = Number(weiStr) / 1e18;
@@ -28,11 +26,11 @@ function formatWeiToEth(weiStr, maxFrac = 6) {
 
 // 0x1 / 1 / '0X1' -> '0x1'
 function normalizeChainId(cid) {
-  if (!cid) return "";
-  if (typeof cid === "string" && cid.startsWith("0x")) return cid.toLowerCase();
-  const asNum = Number(cid);
-  if (Number.isFinite(asNum)) return `0x${asNum.toString(16)}`;
-  return String(cid).toLowerCase();
+  if (!cid) return "";
+  if (typeof cid === "string" && cid.startsWith("0x")) return cid.toLowerCase();
+  const asNum = Number(cid);
+  if (Number.isFinite(asNum)) return `0x${asNum.toString(16)}`;
+  return String(cid).toLowerCase();
 }
 
 // chainId -> "mainnet" | "sepolia" (par défaut mainnet)
@@ -48,7 +46,9 @@ function networkFromChainId(chainId) {
 
 // Pour liens d’explorateur
 function blockscoutBaseByNetwork(network) {
-  return network === "sepolia"? "https://eth-sepolia.blockscout.com": "https://eth.blockscout.com";
+  return network === "sepolia"
+    ? "https://eth-sepolia.blockscout.com"
+    : "https://eth.blockscout.com";
 }
 
 
@@ -60,10 +60,8 @@ export default function WalletHealth({
   onAnalyzeClick,
   isAnalysisLoading,
   onOpenSettings
-
 }) {
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
-  console.log(API_BASE)
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [balanceWei, setBalanceWei] = useState(null);
@@ -138,50 +136,56 @@ export default function WalletHealth({
   const balanceEth = useMemo(() => formatWeiToEth(balanceWei, 6), [balanceWei]);
 
   return (
-    <section className="w-full max-w-xl rounded-2xl p-6 bg-[#0e1a26] text-white">
-      {/* Header with inline settings button */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">🪙 Wallet Global Health</h2>
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          className="px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/15 text-white text-sm border border-white/10"
-        >
-          ⚙️ Paramètres IA
-        </button>
+    <section className="w-full max-w-3xl rounded-2xl p-0 text-white">
+      {/* Header without redundant settings button */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-semibold tracking-tight" style={{fontFamily:"var(--font-display)"}}>Wallet</h2>
+        {/* Removed: redundant Paramètres IA button */}
       </div>
 
-      <div className="mt-2 text-sm opacity-80">
-        Address: <span className="font-mono">{address}</span>
-      </div>
-      <div className="mt-1 text-sm opacity-80">
-        Network:{" "}
-        <span className="font-mono">
-         {network} ({chainIdNorm || "—"})
-        </span>
-      </div>
-
-      {loading && <div className="mt-4">Chargement…</div>}
-      {err && <div className="mt-4 text-red-400">{err}</div>}
-
-      {!loading && !err && (
-        <>
-          <div className="mt-4 text-base">
-            ETH Balance: <strong>{balanceEth}</strong>
+      {/* Compact wallet summary card */}
+      <div className="card rounded-2xl p-4 bg-surface-1">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="space-y-1">
+            <div className="text-xs text-muted">Address</div>
+            <div className="font-mono text-sm opacity-95">{address}</div>
           </div>
+          <div className="space-y-1 min-w-[140px]">
+            <div className="text-xs text-muted">Network</div>
+            <div className="font-mono text-sm opacity-95">{network} ({chainIdNorm || "—"})</div>
+          </div>
+          <div className="space-y-1 min-w-[160px] text-right ml-auto">
+            <div className="text-xs text-muted">ETH Balance</div>
+            <div className="text-base font-semibold">{balanceEth}</div>
+          </div>
+        </div>
+      </div>
 
-          <div className="mt-6">
-            <div className="font-medium mb-2">
-              Recent Transactions (scored):
-            </div>
-            <div className="space-y-3 max-h-80 overflow-auto rounded-md border border-white/10 p-3">
-              {scored.length === 0 && (
-                <div className="opacity-70">
-                  No transactions found on this network.
-                </div>
-              )}
+      {/* Transactions list */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-base font-medium text-white/90" style={{fontFamily:"var(--font-display)"}}>Recent Transactions (scored)</h3>
+          {scored.length > 0 && (
+            <button
+              onClick={onAnalyzeClick}
+              disabled={isAnalysisLoading}
+              className="px-4 py-2 bg-[#2563eb] text-white font-semibold rounded-xl shadow-md hover:bg-[#1e4fd6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isAnalysisLoading ? "Analyzing..." : "Analyze with AI"}
+            </button>
+          )}
+        </div>
 
-              {/* ... (your existing scored.map - no changes) ... */}
+        <div className="rounded-2xl border border-subtle bg-surface-1 p-3 max-h-96 overflow-auto">
+          {loading && <div className="p-3">Chargement…</div>}
+          {err && <div className="p-3 text-red-400">{err}</div>}
+
+          {!loading && !err && scored.length === 0 && (
+            <div className="opacity-70 p-3">No transactions found on this network.</div>
+          )}
+
+          {!loading && !err && scored.length > 0 && (
+            <div className="space-y-3">
               {scored.map((s) => {
                 const det = s?.enhanced_data?.transaction_details || {};
                 const from = det?.from?.hash || det?.from || "—";
@@ -189,87 +193,78 @@ export default function WalletHealth({
                 const ts = det?.timestamp || "—";
                 const valueEth = formatWeiToEth(det?.value ?? 0, 6);
                 const feeEth = formatWeiToEth(det?.fee?.value ?? 0, 6);
+                const subs = s?.subscores || {};
+                const subList = [
+                  { key: "economic", label: "Economic", cls: "text-economic" },
+                  { key: "technical", label: "Technical", cls: "text-technical" },
+                  { key: "risk_security", label: "Risk/Security", cls: "text-risk" },
+                  { key: "strategic", label: "Strategic", cls: "text-strategic" },
+                ];
 
                 return (
-                  <div
-                    key={s.tx_hash}
-                    className="text-sm rounded-md p-3 bg-white/5"
-                  >
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <a
-                        className="underline"
-                        href={`${explorerBase}/tx/${s.tx_hash}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {s.tx_hash.slice(0, 10)}…
-                      </a>
-                      <div className="flex items-center gap-2">
-                        <CircularProgress
-                          color="success"
-                          formatOptions={{ style: "unit", unit: "kilometer" }}
-                          label="Score"
-                          showValueLabel={true}
-                          size="lg"
-                          value={Math.round(s.final_score || 0)}
-                          maxValue={100}
-                        />
-                        <span className="px-2 py-0.5 rounded-full text-xs bg-white/10">
-                          Risk: {s.risk_level || "—"}
+                  <div key={s.tx_hash} className="rounded-xl bg-surface-2 border border-subtle p-3 card-hover">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <a className="underline" href={`${explorerBase}/tx/${s.tx_hash}`} target="_blank" rel="noreferrer">
+                          {s.tx_hash.slice(0, 10)}…
+                        </a>
+                        <span className="pill text-xs px-2 py-0.5 rounded-full">Risk: {s.risk_level || "—"}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {/* Replaced CircularProgress with a simple chip */}
+                        <span className="px-3 py-1 rounded-md bg-white/10 text-white text-sm font-semibold">
+                          Score: {Number.isFinite(Math.round(s.final_score || 0)) ? `${Math.round(s.final_score || 0)}%` : "—"}
                         </span>
                       </div>
                     </div>
-                    <div className="mt-1">
-                      From: <span className="font-mono">{from}</span>
+
+                    {/* Subscore chips (simple flex row) */}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {subList.map(({ key, label }) => {
+                        const v = Math.round(Number(subs?.[key] ?? 0));
+                        const cls =
+                          key === "economic"
+                            ? "bg-emerald-500/10 text-emerald-400"
+                            : key === "technical"
+                            ? "bg-blue-500/10 text-blue-400"
+                            : key === "risk_security"
+                            ? "bg-red-500/10 text-red-400"
+                            : "bg-yellow-500/10 text-yellow-400"; // strategic
+                        return (
+                          <span
+                            key={key}
+                            className={`${cls} px-3 py-1 rounded-md text-sm`}
+                          >
+                            {label}: {Number.isFinite(v) ? `${v}%` : "—"}
+                          </span>
+                        );
+                      })}
                     </div>
-                    <div>
-                      To: <span className="font-mono">{to}</span>
-                    </div>
-                    <div>
-                      Date: <span className="font-mono">{ts}</span>
-                    </div>
-                    <div>
-                      Value: <strong>{valueEth} ETH</strong>
-                    </div>
-                    <div>
-                      Fee: <span className="font-mono">{feeEth} ETH</span>
+
+                    <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-sm">
+                      <div className="col-span-2 md:col-span-2 min-w-0">
+                        From: <span className="font-mono block md:max-w-[280px] md:whitespace-nowrap md:overflow-hidden md:text-ellipsis break-all">{from}</span>
+                      </div>
+                      <div className="col-span-2 md:col-span-2 min-w-0">
+                        To: <span className="font-mono block md:max-w-[280px] md:whitespace-nowrap md:overflow-hidden md:text-ellipsis break-all">{to}</span>
+                      </div>
+                      <div>Date: <span className="font-mono">{ts}</span></div>
+                      <div>Value: <strong>{valueEth} ETH</strong></div>
+                      <div>Fee: <span className="font-mono">{feeEth} ETH</span></div>
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
-
-          {/* Action buttons row: Analyze + Settings */}
-          {scored.length > 0 && (
-            <div className="mt-4 flex gap-3">
-              <button
-                onClick={onAnalyzeClick}
-                disabled={isAnalysisLoading}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isAnalysisLoading ? "Analyzing..." : "🤖 Analyze Transactions with AI"}
-              </button>
-              <button
-                type="button"
-                onClick={onOpenSettings}
-                className="px-4 py-2 bg-white/10 text-white rounded-lg border border-white/10 hover:bg-white/15"
-              >
-                ⚙️ Paramètres IA
-              </button>
-            </div>
           )}
+        </div>
+      </div>
 
-
-          {/* ... (your existing Debug details - no changes) ... */}
-          <details className="mt-4 opacity-70">
-            <summary>Debug</summary>
-            <pre className="whitespace-pre-wrap text-xs mt-2">
-              {JSON.stringify(debug, null, 2)}
-            </pre>
-          </details>
-        </>
-      )}
+      {/* Debug (collapsible) */}
+      <details className="mt-4 opacity-70">
+        <summary>Debug</summary>
+        <pre className="whitespace-pre-wrap text-xs mt-2">{JSON.stringify(debug, null, 2)}</pre>
+      </details>
     </section>
   );
 }
