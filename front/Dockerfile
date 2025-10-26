@@ -4,6 +4,6 @@ WORKDIR /app
 COPY . .
 RUN npm install
 RUN npm run build
-VOLUME /app
 EXPOSE 5173
-CMD [ "npx","serve","-l", "5173", "dist"]
+CMD ["npm", "run", "dev"]
+#CMD [ "npx","serve","-s", "-l", "5173", "dist"]
