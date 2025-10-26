@@ -1,3 +1,4 @@
+openai
 requests==2.32.5
 annotated-types==0.7.0
 anyio==4.11.0

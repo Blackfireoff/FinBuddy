@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Literal
+from typing import List, Dict, Optional
 from pydantic import BaseModel
 
 class Subscores(BaseModel):
