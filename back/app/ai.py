@@ -48,6 +48,10 @@ async def openai_compat_chat(user_prompt: str, ai: Dict) -> Tuple[str, str]:
             "base_url": "https://api.deepseek.com",
             "models": ["deepseek-chat"],
         },
+        "asi1": {
+            "base_url": "https://api.asi1.ai/v1",
+            "models": ["asi1-mini"],
+        },
         # Ollama via OpenAI-compatible API
         "ollama": {
             "base_url": "http://localhost:11434/v1",
