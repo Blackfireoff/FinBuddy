@@ -3,7 +3,7 @@ from typing import Any, Dict
 from fastapi import FastAPI, HTTPException
 from jinja2 import Template
 from schemas import ExplainRequest, ExplainResponse, TxExplanation
-
+from json_repair import repair_json
 
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
@@ -49,6 +49,7 @@ async def explain(req: ExplainRequest):
         print(f"Prompt sent to Ollama:\n{prompt}", flush=True)
         # Appel LLM
         data = await ollama_chat(user_prompt=prompt)
+        data = repair_json(data)
         data = json.loads(data)
 
         # Parse JSON
