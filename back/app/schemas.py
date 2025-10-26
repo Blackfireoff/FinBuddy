@@ -31,6 +31,7 @@ class TxExplanation(BaseModel):
     tx_hash: str
     per_dimension: Dict[str, PerDimExplanation]
     overall_comment: str
+    scores: Dict
 
 class ExplainResponse(BaseModel):
     network: str

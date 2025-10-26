@@ -51,12 +51,8 @@ async def explain(req: ExplainRequest):
         data = await ollama_chat(user_prompt=prompt)
         data = repair_json(data)
         data = json.loads(data)
-
-        # Parse JSON
-
-        # Sanity: s'assure qu'on renvoie bien le hash de la tx demandée
         data["tx_hash"] = tx.tx_hash
-
+        data["scores"] = tx.subscores
         explanations.append(data)
 
     return ExplainResponse(
