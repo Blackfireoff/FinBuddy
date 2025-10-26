@@ -1,10 +1,11 @@
 import json
 from typing import Any, Dict, Tuple
+
 from fastapi import FastAPI, HTTPException
 from jinja2 import Template
-from schemas import ExplainRequest, ExplainResponse, TxExplanation
 from json_repair import repair_json
 
+from schemas import ExplainRequest, ExplainResponse, TxExplanation
 
 # Frontend must provide AI config. Default provider is 'ollama'. No environment fallback is used.
 
@@ -15,6 +16,7 @@ from json_repair import repair_json
 with open("prompt.jinja", "r", encoding="utf-8") as f:
     PROMPT_TPL = Template(f.read())
 
+
 async def openai_compat_chat(user_prompt: str, ai: Dict) -> Tuple[str, str]:
     """
     Call an OpenAI-compatible chat completion endpoint using frontend-provided config.
@@ -24,7 +26,9 @@ async def openai_compat_chat(user_prompt: str, ai: Dict) -> Tuple[str, str]:
     provider = ((ai or {}).get("provider") or "ollama").lower()
     # For OpenAI-compatible providers, api_key is required. For 'ollama' it can be omitted.
     if provider != "ollama" and not api_key:
-        raise HTTPException(status_code=400, detail="ai.api_key is required for non-ollama providers")
+        raise HTTPException(
+            status_code=400, detail="ai.api_key is required for non-ollama providers"
+        )
 
     # Provider → base_url + allowed models mapping
     provider_defaults = {
@@ -65,7 +69,9 @@ async def openai_compat_chat(user_prompt: str, ai: Dict) -> Tuple[str, str]:
     try:
         from openai import OpenAI
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"openai client not installed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"openai client not installed: {str(e)}"
+        )
 
     if provider == "ollama" and not api_key:
         api_key = "ollama"  # placeholder; Ollama ignores the token
@@ -73,13 +79,11 @@ async def openai_compat_chat(user_prompt: str, ai: Dict) -> Tuple[str, str]:
     try:
         resp = client.chat.completions.create(
             model=model,
-            messages=[
-                {"role": "user", "content": user_prompt}
-            ],
+            messages=[{"role": "user", "content": user_prompt}],
         )
         msg = None
         try:
-            msg = (resp.choices[0].message.content if resp and resp.choices else None)
+            msg = resp.choices[0].message.content if resp and resp.choices else None
         except Exception:
             pass
         if not msg:
@@ -87,10 +91,16 @@ async def openai_compat_chat(user_prompt: str, ai: Dict) -> Tuple[str, str]:
                 msg = resp.choices[0].message  # type: ignore
             except Exception:
                 msg = None
-        text = msg if isinstance(msg, str) else json.dumps(resp.model_dump() if hasattr(resp, "model_dump") else resp)
+        text = (
+            msg
+            if isinstance(msg, str)
+            else json.dumps(resp.model_dump() if hasattr(resp, "model_dump") else resp)
+        )
         return text, model
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"OpenAI-compatible chat error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"OpenAI-compatible chat error: {str(e)}"
+        )
 
 
 async def explain(req: ExplainRequest):
@@ -102,13 +112,16 @@ async def explain(req: ExplainRequest):
         payload = {
             "network": req.network,
             "address": req.address,
-            "tx": tx.model_dump()
+            "tx": tx.model_dump(),
         }
         prompt = PROMPT_TPL.render(data=payload)
         if not isinstance(req.ai, dict):
             # Default to ollama if not provided
             req.ai = {"provider": "ollama"}
-        print(f"Prompt sent to {req.ai.get('provider', 'ollama')} (auto):\n{prompt}", flush=True)
+        print(
+            f"Prompt sent to {req.ai.get('provider', 'ollama')} (auto):\n{prompt}",
+            flush=True,
+        )
         data, used_model = await openai_compat_chat(user_prompt=prompt, ai=req.ai or {})
         data = repair_json(data)
         data = json.loads(data)
@@ -124,3 +137,4 @@ async def explain(req: ExplainRequest):
         model=response_model,
         explanations=[TxExplanation(**e) for e in explanations],
     )
+
